@@ -1,33 +1,39 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits } = require("discord.js");
-const { joinVoiceChannel } = require("@discordjs/voice");
+const { Client, GatewayIntentBits, Collection } = require("discord.js");
+const { Player } = require("discord-player");
+const { DefaultExtractors } = require("@discord-player/extractor");
+
+const commandHandler = require("./handlers/commandHandler");
+const eventHandler = require("./handlers/eventHandler");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates,
-  ],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+    ],
 });
 
-client.once("ready", async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+client.commands = new Collection();
 
-  const channel = await client.channels.fetch(process.env.VOICE_CHANNEL_ID);
-
-  if (!channel) {
-    return console.log("❌ Voice channel not found");
-  }
-
-  joinVoiceChannel({
-    channelId: channel.id,
-    guildId: channel.guild.id,
-    adapterCreator: channel.guild.voiceAdapterCreator,
-    selfDeaf: false,
-    selfMute: false,
-  });
-
-  console.log("🎧 Joined voice channel!");
+const player = new Player(client);
+client.player = player;
+player.events.on("debug", (queue, message) => {
+    console.log("[DEBUG]", message);
 });
+
+player.events.on("error", (queue, error) => {
+    console.error("[PLAYER ERROR]", error);
+});
+
+player.events.on("playerError", (queue, error) => {
+    console.error("[TRACK ERROR]", error);
+});
+(async () => {
+    await player.extractors.loadMulti(DefaultExtractors);
+})();
+
+commandHandler(client);
+eventHandler(client);
 
 client.login(process.env.TOKEN);
