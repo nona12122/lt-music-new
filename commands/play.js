@@ -50,13 +50,14 @@ module.exports = {
      console.log("🚀 Starting play...");
 
 const result = await player.play(voiceChannel, query, {
-    metadata: interaction.channel,
     nodeOptions: {
+        metadata: interaction.channel,
         leaveOnEnd: false,
         leaveOnStop: false,
-    },
+        selfDeaf: false,
+        selfMute: false
+    }
 });
-
 console.log("✅ Play finished");
 
             return interaction.editReply(
